@@ -1,6 +1,9 @@
 package com.jackandphantom.demon;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,28 +14,38 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.model.GlideUrl;
+
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    Button previous, play, next,p,n,q,w,e,r,t,y,u,i,o,a,s,d,f,g,h,j,k,l,z,x,c,v,b,alt,shift,arrow_up,arrow_down,enter;
+    Button previous, play, next,screen,p,n,q,w,e,r,t,y,u,i,o,a,s,d,f,g,h,j,k,l,z,x,c,v,b,alt,shift,arrow_up,arrow_down,enter;
     Context context;
     TextView playPauseButton;
     TextView nextButton;
     TextView previousButton;
+    ImageView image;
     TextView mousePad;
 
     private boolean isConnected=false;
     private boolean mouseMoved=false;
     private Socket socket;
     private PrintWriter out;
+
+
 
     private float initX =0;
     private float initY =0;
@@ -47,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         context = this; //save the context to show Toast messages
 
         //Get references of all buttons
+        image = findViewById(R.id.image);
         p = (Button) findViewById(R.id.p);
         n = (Button) findViewById(R.id.n);
         q = (Button) findViewById(R.id.q);
@@ -79,7 +93,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         enter = (Button) findViewById(R.id.arrow_enter);
         playPauseButton = findViewById(R.id.mouse_right);
         nextButton = findViewById(R.id.mouse_left);
-       // previousButton = (Button)findViewById(R.id.mousepad);
+        screen=findViewById(R.id.screen);
+        // previousButton = (Button)findViewById(R.id.mousepad);
 
         //this activity extends View.OnClickListener, set this as onClickListener
         //for all buttons
@@ -161,6 +176,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                     }).start();
 
+
+                }
+
+
+            }
+        });
+
+
+        screen.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if (isConnected && out != null) {
+
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            out.println(Constants.Sc);
+                            out.println(Constants.Sc);
+
+                        }
+                    }).start();
+                    new ReceivingData(socket).start();
 
                 }
 
@@ -276,6 +314,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             }
         });
+
+
 
         y.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -713,7 +753,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //noinspection SimplifiableIfStatement
         if(id == R.id.action_connect) {
             ConnectPhoneTask connectPhoneTask = new ConnectPhoneTask();
-            connectPhoneTask.execute(Constants.SERVER_IP); //try to connect to server in another thread
+            connectPhoneTask.execute(Constants.SERVER_IP);
+//            new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    while(true) {
+//                        try {
+//                            try {
+//                                socket.close();
+//                            }catch (IOException e) {
+//                                e.printStackTrace();
+//                            }
+//                            image.setImageBitmap(BitmapFactory.decodeStream(socket.getInputStream()));
+//                        } catch (IOException e1) {
+//                            e1.printStackTrace();
+//                        } catch(Exception e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//            }).start();//try to connect to server in another thread
             return true;
         }
 
@@ -762,7 +821,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             try {
                 if(isConnected) {
                     out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket
-                            .getOutputStream())), true); //create output stream to send data to server
+                            .getOutputStream() )), true);
+
+                    //new ReceivingData().start();///create output stream to send data to server
                 }
             }catch (IOException e){
                 Log.e("remotedroid", "Error while creating OutWriter", e);
@@ -770,4 +831,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
     }
+
+    class ReceivingData extends Thread {
+
+        InputStream is;
+        BufferedInputStream bufferedInputStream;
+        ReceivingData(Socket socket) {
+            try {
+                is = socket.getInputStream();
+                bufferedInputStream = new BufferedInputStream(is);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+        }
+
+        @Override
+        public void run() {
+            while(true) {
+                Log.e("MY TAG, ", "I AM IN THE RUN");
+
+                    final Drawable drawable = Drawable.createFromStream(is, "name");
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+                Log.e("MY TAG", "HELLO "+ drawable);
+                    if(drawable != null) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                image.setImageDrawable(drawable);
+                            }
+                        });
+
+                    }else
+                        break;
+            }
+        }
+    }
 }
+

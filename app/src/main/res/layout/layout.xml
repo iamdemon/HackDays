@@ -361,4 +361,21 @@
         android:background="@drawable/ripple"
         android:text="shift"/>
 
+    <Button
+        android:id="@+id/screen"
+        android:layout_width="120dp"
+        android:layout_height="50dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="600dp"
+        android:textSize="15dp"
+        android:background="@drawable/ripple"
+        android:text="Screenshot"/>
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:id="@+id/image"
+
+        />
+
 </RelativeLayout>
